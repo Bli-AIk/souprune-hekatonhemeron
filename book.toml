@@ -1,11 +1,13 @@
 [book]
 authors = ["Bli_Aik"]
-language = "en"
+language = "zh-CN"
 src = "src"
 title = "SoupRune Hekatonhemeron"
+description = "NOT An architectural guide for talented or unsuccessful or both or nothing chefs or programmers or lawyers who cook for themselves."
 
 [output.html]
 additional-css = ["./theme/catppuccin.css"]
 default-theme = "latte"
 preferred-dark-theme = "mocha"
 no-section-label = true
+git-repository-url = "https://github.com/Bli-AIk/souprune-hekatonhemeron"
