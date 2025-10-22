@@ -25,7 +25,7 @@
 总而言之，大概做状态机不算难事，状态机就是...状态，没什么好说的。倒也有一个难点――我这还是第一次正儿八经用 bevy――但不是第一次正儿八经学rust、看ECS，也不是正儿八经第一次用游戏引擎，做游戏开发！唯一“第一次”的就是拿 rust 在 bevy 用 ECS 开发 游戏... 多看看示例就好啦！大概吧。
 
 
-## 先把调料本身准备好！
+## 不得不先把桌子摆上。。。
 
 以往我都是在 OOP 下写状态机。思考了一会儿，然后我发现好像状态机在 ECS 下也有点新鲜嘛！毕竟从 OOP 转向 数据驱动，那思路还是有点区别的――但对于状态机来说，数据驱动明显更舒服一些。
 
@@ -46,7 +46,8 @@ enum AppState {
 }
 ```
 
-看没，我就说做游戏就是一会儿这个一会儿那个。我们需要做状态机——我是说，给角色的“小状态机”，但是不得不先把“大状态机”处理好。之后这样的事儿多着呢，哈哈——比方说接下来我们要处理素材。
+看没，我就说做游戏就是一会儿这个一会儿那个。我们需要做状态机——我是说，给角色的“小状态机”，但是不得不先把“大状态机”处理好。之后这样的事儿多着呢，哈哈——比方说接下来我们要处理素材……服了。我本来寻思这章的标题就叫“先把调料本身准备好！”呢，合着还得先把桌子摆了？……这句不错，新标题 get。
+
 
 示例里面定义个了`RpgSpriteFolder`。来保存精灵文件夹的句柄。我们做同样的事情，但是起名为`OverWorldCharacterSpriteFolder`。
 
@@ -54,7 +55,7 @@ enum AppState {
 #[derive(Resource, Default)]
 struct OverWorldCharacterSpriteFolder(Handle<LoadedFolder>);
 
-fn load_textures(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn load_textures_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(OverWorldCharacterSpriteFolder(
         asset_server.load_folder("textures/overworld/characters"),
     ));
@@ -70,16 +71,532 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .init_state::<AppState>()
-        .add_systems(OnEnter(AppState::Setup), load_textures)
+        .add_systems(OnEnter(AppState::Setup), load_textures_system)
         .run();
 }
 ```
 
 好，弄到这里就很不错了。休息一下。休息的方式就是先不敲码了，先把贴图给处理好。
 
+直接从 UCT 搬来，把名字都改好——结构如下：
+
+```
+assets
+└── textures
+    └── overworld
+        └── characters
+            ├── flowey
+            │   ├── idle
+            │   │   ├── flowey-idle-0.png
+            │   │   └── flowey-idle-1.png
+            │   └── sink
+            │       ├── flowey-sink-0.png
+            │       ├── flowey-sink-1.png
+            │       ├── flowey-sink-2.png
+            │       ├── flowey-sink-3.png
+            │       ├── flowey-sink-4.png
+            │       └── flowey-sink-5.png
+            ├── frisk
+            │   ├── run
+            │   │   ├── frisk-run-down-1.png
+            │   │   ├── frisk-run-down-2.png
+            │   │   ├── frisk-run-down-3.png
+            │   │   ├── frisk-run-down-4.png
+            │   │   ├── frisk-run-down-5.png
+            │   │   ├── frisk-run-down-6.png
+            │   │   ├── frisk-run-left-1.png
+            │   │   ├── frisk-run-left-2.png
+            │   │   ├── frisk-run-left-3.png
+            │   │   ├── frisk-run-left-4.png
+            │   │   ├── frisk-run-left-5.png
+            │   │   ├── frisk-run-left-6.png
+            │   │   ├── frisk-run-right-1.png
+            │   │   ├── frisk-run-right-2.png
+            │   │   ├── frisk-run-right-3.png
+            │   │   ├── frisk-run-right-4.png
+            │   │   ├── frisk-run-right-5.png
+            │   │   ├── frisk-run-right-6.png
+            │   │   ├── frisk-run-up-1.png
+            │   │   ├── frisk-run-up-2.png
+            │   │   ├── frisk-run-up-3.png
+            │   │   ├── frisk-run-up-4.png
+            │   │   ├── frisk-run-up-5.png
+            │   │   ├── frisk-run-up-6.png
+            │   │   └── readme.md
+            │   └── walk
+            │       ├── frisk-walk-down-1.png
+            │       ├── frisk-walk-down-2.png
+            │       ├── frisk-walk-down-3.png
+            │       ├── frisk-walk-down-4.png
+            │       ├── frisk-walk-left-1.png
+            │       ├── frisk-walk-left-2.png
+            │       ├── frisk-walk-right-1.png
+            │       ├── frisk-walk-right-2.png
+            │       ├── frisk-walk-up-1.png
+            │       ├── frisk-walk-up-2.png
+            │       ├── frisk-walk-up-3.png
+            │       └── frisk-walk-up-4.png
+            └── toriel
+                └── walk
+                    ├── toriel-walk-down-0.png
+                    ├── toriel-walk-down-1.png
+                    ├── toriel-walk-down-2.png
+                    ├── toriel-walk-down-3.png
+                    ├── toriel-walk-down-talk-0.png
+                    ├── toriel-walk-down-talk-1.png
+                    ├── toriel-walk-left-0.png
+                    ├── toriel-walk-left-1.png
+                    ├── toriel-walk-left-2.png
+                    ├── toriel-walk-left-3.png
+                    ├── toriel-walk-left-talk-0.png
+                    ├── toriel-walk-left-talk-1.png
+                    ├── toriel-walk-up-0.png
+                    ├── toriel-walk-up-1.png
+                    ├── toriel-walk-up-2.png
+                    └── toriel-walk-up-3.png
+```
+
+虽然我们主要需要弄的是 Frisk 的状态机，但 NPC 的也可以备一份为先。
+
+然后是 `check_textures_system`，用于“大状态机”的状态转换……直接抄了。
+```rust
+fn check_textures_system(
+    mut next_state: ResMut<NextState<AppState>>,
+    rpg_sprite_folder: Res<OverWorldCharacterSpriteFolder>,
+    mut events: MessageReader<AssetEvent<LoadedFolder>>,
+) {
+    for event in events.read() {
+        if event.is_loaded_with_dependencies(&rpg_sprite_folder.0) {
+            next_state.set(AppState::Finished);
+        }
+    }
+}
+```
+
+相应的 `main` ...
+```rust
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .init_state::<AppState>()
+        .add_systems(OnEnter(AppState::Setup), load_textures_system)
+        .add_systems(
+            Update,
+            check_textures_system.run_if(in_state(AppState::Setup)),
+        )
+        .run();
+}
+```
+
+之后，资源加载部分，我们暂时只要加载一张贴图就行了。
+
+```rust
+
+
+fn setup_system(
+    mut commands: Commands,
+    rpg_sprite_handles: Res<OverWorldCharacterSpriteFolder>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    loaded_folders: Res<Assets<LoadedFolder>>,
+    mut textures: ResMut<Assets<Image>>,
+) {
+    commands.spawn(Camera2d);
+
+    let loaded_folder = loaded_folders.get(&rpg_sprite_handles.0).unwrap();
+
+    let (texture_atlas_nearest, nearest_sources, nearest_texture) = create_texture_atlas(
+        loaded_folder,
+        None,
+        Some(ImageSampler::nearest()),
+        &mut textures,
+    );
+    let atlas_nearest_handle = texture_atlases.add(texture_atlas_nearest);
+
+    let frisk_handle: Handle<Image> = asset_server
+        .get_handle("textures/overworld/characters/frisk/walk/frisk-walk-down-1.png")
+        .unwrap();
+
+    create_sprite_from_atlas(
+        &mut commands,
+        (0.0, 0.0, 0.0),
+        nearest_texture,
+        nearest_sources,
+        atlas_nearest_handle,
+        &frisk_handle,
+    );
+}
+
+fn create_texture_atlas(
+    folder: &LoadedFolder,
+    padding: Option<UVec2>,
+    sampling: Option<ImageSampler>,
+    textures: &mut ResMut<Assets<Image>>,
+) -> (TextureAtlasLayout, TextureAtlasSources, Handle<Image>) {
+    let mut texture_atlas_builder = TextureAtlasBuilder::default();
+    texture_atlas_builder.padding(padding.unwrap_or_default());
+
+    for handle in folder.handles.iter() {
+        let id = handle.id().typed_unchecked::<Image>();
+        let Some(texture) = textures.get(id) else {
+            warn!(
+                "{} did not resolve to an `Image` asset.",
+                handle.path().unwrap()
+            );
+            continue;
+        };
+
+        texture_atlas_builder.add_texture(Some(id), texture);
+    }
+
+    let (texture_atlas_layout, texture_atlas_sources, texture) =
+        texture_atlas_builder.build().unwrap();
+    let texture = textures.add(texture);
+
+    let image = textures.get_mut(&texture).unwrap();
+    image.sampler = sampling.unwrap_or_default();
+
+    (texture_atlas_layout, texture_atlas_sources, texture)
+}
+
+fn create_sprite_from_atlas(
+    commands: &mut Commands,
+    translation: (f32, f32, f32),
+    atlas_texture: Handle<Image>,
+    atlas_sources: TextureAtlasSources,
+    atlas_handle: Handle<TextureAtlasLayout>,
+    vendor_handle: &Handle<Image>,
+) {
+    commands.spawn((
+        Transform {
+            translation: Vec3::new(translation.0, translation.1, translation.2),
+            ..default()
+        },
+        Sprite::from_atlas_image(
+            atlas_texture,
+            atlas_sources.handle(atlas_handle, vendor_handle).unwrap(),
+        ),
+    ));
+}
+
+```
+对应的 `main` 就是：
+
+```rust
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .init_state::<AppState>()
+        .add_systems(OnEnter(AppState::Setup), load_textures_system)
+        .add_systems(
+            Update,
+            check_textures_system.run_if(in_state(AppState::Setup)),
+        )
+        .add_systems(OnEnter(AppState::Finished), setup_system)
+        .run();
+}
+
+```
+
+好吧，按理来说我们这不会出任何问题，但刚刚你可能注意到我资源里面有一个 `readme.md` 在 Frisk 的 run 状态的贴图文件夹内——因为这部分贴图不是 undertale 原作中的，并且参考了UTY，所以我需要说明一下。咱肯定是要留着它的。
+
+...啊，这玩意儿可折腾死我了。
+
+```
+ERROR bevy_asset::server: Failed to load folder. Could not find an asset loader matching: Loader Name: None; Asset Type: None; Extension: None; Path: Some("textures/overworld/characters/frisk/run/readme.md");
+```
+资源加载器不干了。没人管 markdown 文件的加载。虽然把那个 readme.md 删了就能解决问题，但是……太不优雅了！
+
+所以我们就写一个 markdown 的资源加载器吧[^3]，尽管我会让它什么都不干——也许将来哪天也能用到。
+
+```rust
+use bevy::asset::io::Reader;
+use bevy::asset::{AssetLoader, LoadContext};
+use bevy::prelude::*;
+use bevy::tasks::ConditionalSendFuture;
+pub struct MarkdownPlugin;
+
+impl Plugin for MarkdownPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_asset::<MarkdownAsset>()
+            .init_asset_loader::<MarkdownAssetLoader>();
+    }
+}
+#[derive(Asset, TypePath, Debug)]
+pub struct MarkdownAsset;
+#[derive(Default)]
+pub struct MarkdownAssetLoader;
+
+impl AssetLoader for MarkdownAssetLoader {
+    type Asset = MarkdownAsset;
+    type Settings = ();
+    type Error = std::io::Error;
+
+    fn load<>(
+        &self,
+        _reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
+    ) -> impl ConditionalSendFuture<Output = std::result::Result<<Self as AssetLoader>::Asset, <Self as AssetLoader>::Error>> {
+        info!(
+            "Successfully 'loaded' (ignored) markdown file: {:?}",
+            load_context.path()
+        );
+
+        Box::pin(async move { Ok(MarkdownAsset) })
+    }
+
+    fn extensions(&self) -> &[&str] {
+        &["md"]
+    }
+}
+
+```
+
+边看文档边敲，再加上点 vibe coding，反正现在可以运行了，Sprite也可以显示，但是还有一个小报错：
+```
+ERROR bevy_image::texture_atlas_builder: Error converting texture from 'Rgba16Float' to 'Rgba8UnormSrgb', ignoring
+
+```
+
+所以说，markdown文件被加载后，还是被当成图片处理了——那大概还要加一层过滤。
+
+```rust
+
+fn create_texture_atlas(
+    folder: &LoadedFolder,
+    padding: Option<UVec2>,
+    sampling: Option<ImageSampler>,
+    textures: &mut ResMut<Assets<Image>>,
+) -> (TextureAtlasLayout, TextureAtlasSources, Handle<Image>) {
+    let mut texture_atlas_builder = TextureAtlasBuilder::default();
+    texture_atlas_builder.padding(padding.unwrap_or_default());
+    // 我搁这儿加了过滤
+    for handle in folder.handles.iter() {
+        if let Some(path) = handle.path() {
+            let path_str = path.to_string();
+            if !path_str.ends_with(".png") && !path_str.ends_with(".jpg") && !path_str.ends_with(".jpeg") {
+                continue;
+            }
+        }
+        
+        let id = handle.id().typed_unchecked::<Image>();
+        let Some(texture) = textures.get(id) else {
+            warn!(
+                "{} did not resolve to an `Image` asset.",
+                handle.path().unwrap()
+            );
+            continue;
+        };
+
+        texture_atlas_builder.add_texture(Some(id), texture);
+    }
+
+    let (texture_atlas_layout, texture_atlas_sources, texture) =
+        texture_atlas_builder.build().unwrap();
+    let texture = textures.add(texture);
+
+    let image = textures.get_mut(&texture).unwrap();
+    image.sampler = sampling.unwrap_or_default();
+
+    (texture_atlas_layout, texture_atlas_sources, texture)
+}
+```
+
+搞定了。现在一切都运行良好……但我不是要做状态机来着吗？！所以，先把这些玩意儿封装掉……别干扰我的思路为好。
+
+以及，OOP还在追我——我现在即使是写 rust 项目，也希望尽可能的让每个文件都分开一些——单一职责也好——条理清晰也罢——你们这些 C# 遗老对类还真是有严重的依赖.png
+
+重构完后大概就是这样：
+
+```rust
+// main.rs
+mod core;
+mod markdown_asset_loader;
+
+use crate::core::resource_plugin::*;
+use crate::markdown_asset_loader::MarkdownPlugin;
+use bevy::asset::LoadedFolder;
+use bevy::image::ImageSampler;
+use bevy::prelude::*;
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(MarkdownPlugin)
+        .init_state::<AppState>()
+        .add_plugins(ResourcePlugin)
+        .add_systems(OnEnter(AppState::Finished), setup_system)
+        .run();
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
+enum AppState {
+    #[default]
+    Setup,
+    Finished,
+}
+
+fn setup_system(
+    mut commands: Commands,
+    rpg_sprite_handles: Res<OverWorldCharacterSpriteFolder>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    loaded_folders: Res<Assets<LoadedFolder>>,
+    mut textures: ResMut<Assets<Image>>,
+) {
+    commands.spawn(Camera2d);
+
+    let loaded_folder = loaded_folders.get(&rpg_sprite_handles.0).unwrap();
+
+    let (texture_atlas_nearest, nearest_sources, nearest_texture) = create_texture_atlas(
+        loaded_folder,
+        None,
+        Some(ImageSampler::nearest()),
+        &mut textures,
+    );
+    let atlas_nearest_handle = texture_atlases.add(texture_atlas_nearest);
+
+    let frisk_handle: Handle<Image> = asset_server
+        .get_handle("textures/overworld/characters/frisk/walk/frisk-walk-down-1.png")
+        .unwrap();
+
+    create_sprite_from_atlas(
+        &mut commands,
+        (0.0, 0.0, 0.0),
+        nearest_texture,
+        nearest_sources,
+        atlas_nearest_handle,
+        &frisk_handle,
+    );
+}
+
+fn create_texture_atlas(
+    folder: &LoadedFolder,
+    padding: Option<UVec2>,
+    sampling: Option<ImageSampler>,
+    textures: &mut ResMut<Assets<Image>>,
+) -> (TextureAtlasLayout, TextureAtlasSources, Handle<Image>) {
+    let mut texture_atlas_builder = TextureAtlasBuilder::default();
+    texture_atlas_builder.padding(padding.unwrap_or_default());
+
+    for handle in folder.handles.iter() {
+        if let Some(path) = handle.path() {
+            let path_str = path.to_string();
+            if !path_str.ends_with(".png")
+                && !path_str.ends_with(".jpg")
+                && !path_str.ends_with(".jpeg")
+            {
+                continue;
+            }
+        }
+
+        let id = handle.id().typed_unchecked::<Image>();
+        let Some(texture) = textures.get(id) else {
+            warn!(
+                "{} did not resolve to an `Image` asset.",
+                handle.path().unwrap()
+            );
+            continue;
+        };
+
+        texture_atlas_builder.add_texture(Some(id), texture);
+    }
+
+    let (texture_atlas_layout, texture_atlas_sources, texture) =
+        texture_atlas_builder.build().unwrap();
+    let texture = textures.add(texture);
+
+    let image = textures.get_mut(&texture).unwrap();
+    image.sampler = sampling.unwrap_or_default();
+
+    (texture_atlas_layout, texture_atlas_sources, texture)
+}
+
+fn create_sprite_from_atlas(
+    commands: &mut Commands,
+    translation: (f32, f32, f32),
+    atlas_texture: Handle<Image>,
+    atlas_sources: TextureAtlasSources,
+    atlas_handle: Handle<TextureAtlasLayout>,
+    vendor_handle: &Handle<Image>,
+) {
+    commands.spawn((
+        Transform {
+            translation: Vec3::new(translation.0, translation.1, translation.2),
+            ..default()
+        },
+        Sprite::from_atlas_image(
+            atlas_texture,
+            atlas_sources.handle(atlas_handle, vendor_handle).unwrap(),
+        ),
+    ));
+}
+
+```
+
+```rust
+use crate::AppState;
+use bevy::app::{App, Plugin, Update};
+use bevy::asset::LoadedFolder;
+use bevy::prelude::*;
+
+#[derive(Resource, Default)]
+pub(crate) struct OverWorldCharacterSpriteFolder(pub(crate) Handle<LoadedFolder>);
+
+pub(crate) struct ResourcePlugin;
+
+impl Plugin for ResourcePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(AppState::Setup), load_textures_system)
+            .add_systems(
+                Update,
+                check_textures_system.run_if(in_state(AppState::Setup)),
+            );
+    }
+}
+
+fn load_textures_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(OverWorldCharacterSpriteFolder(
+        asset_server.load_folder("textures/overworld/characters"),
+    ));
+}
+
+fn check_textures_system(
+    mut next_state: ResMut<NextState<AppState>>,
+    rpg_sprite_folder: Res<OverWorldCharacterSpriteFolder>,
+    mut events: MessageReader<AssetEvent<LoadedFolder>>,
+) {
+    for event in events.read() {
+        if event.is_loaded_with_dependencies(&rpg_sprite_folder.0) {
+            next_state.set(AppState::Finished);
+        }
+    }
+}
+
+```
+
+```
+src
+├── core
+│   └── resource_plugin.rs
+├── core.rs
+├── main.rs
+└── markdown_asset_loader.rs
+```
+
+大概如此……舒服点了。
+
+最后，我们在真去弄调料之前，还要考虑一件事——AppState。我们要针对dr/ut来设计。
+
+
+
+## 把调料本身准备好！
 
 
 ## 把调料装进瓶子里...
+
+站立和行走状态
 
 
 ## ...然后倒入另一个瓶子
@@ -94,3 +611,5 @@ fn main() {
 [^1]: [【C#基础 + WinForms-哔哩哔哩】](https://www.bilibili.com/video/BV1Gx411U7Hb)，虽然讲的磨叽点吧，但毕竟是引我上路的教程，还是挺好的。C#真是最好学的编程语言了。
 
 [^2]: [【Unity2D官方入门教程 Ruby' Adventure 完整版~-哔哩哔哩】](https://www.bilibili.com/BV1V4411W787)，我个人觉得是相当权威的 Unity 入门教程，要是大伙儿都看过一遍就太好了。
+
+[^3]: 官方参考[见此](https://docs.rs/bevy/latest/bevy/asset/trait.AssetLoader.html)。
