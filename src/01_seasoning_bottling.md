@@ -662,6 +662,99 @@ fn update_running_system(query: Query<&Name, With<Running>>) {
 
 ```
 
+这套状态机不仅仅是给玩家的，NPC也包含状态机。但玩家肯定是能够以某种方式操控状态机的……输入。（靠！还得处理输入系统！）
+
+我们的思路大概如此：
+
+- 设一个代表 “可被玩家控制” 的组件
+- 让输入的时候检测有这个组件的物体，若有，则设为Walking，若同时还按着 X 则设为 Run。
+
+所以，新建`src/core/overworld/character/character_components.rs`，然后写了
+
+```rust
+#[derive(Component)]
+struct PlayerControlled;
+```
+
+哦。我们还得有角色。所以……
+
+```rust
+
+#[derive(Component)]
+pub(crate) struct Position(pub Vec2);
+
+#[derive(Component)]
+pub(crate) struct Rotation(pub f32);
+
+#[derive(Component)]
+pub(crate) struct Facing(pub Direction);
+#[derive(Component)]
+pub(crate) struct Health {
+    pub(crate) current: i32,
+    pub(crate) max: i32,
+}
+#[derive(Component)]
+pub(crate) struct AnimationState {
+    pub(crate) clip: String,
+}
+// Current state duration
+#[derive(Component)]
+pub(crate) struct StateTimer(pub f32);
+
+pub(crate) enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+impl Direction {
+    pub fn as_vec2(&self) -> Vec2 {
+        match self {
+            Direction::Up => Vec2::Y,
+            Direction::Down => -Vec2::Y,
+            Direction::Left => -Vec2::X,
+            Direction::Right => Vec2::X,
+        }
+    }
+}
+
+```
+
+```rust
+#[derive(Bundle)]
+pub struct CharacterBundle {
+    position: Position,
+    rotation: Rotation,
+    facing: Facing,
+    sprite: Sprite,
+    health: Health,
+    anim: AnimationState,
+    state_timer: StateTimer,
+    transform: Transform,
+    global_transform: GlobalTransform,
+}
+
+impl CharacterBundle {
+    pub fn new(spawn_pos: Vec2, facing: Direction, sprite: Sprite) -> Self {
+        Self {
+            position: Position(spawn_pos),
+            rotation: Rotation(0.0),
+            facing: Facing(facing),
+            sprite,
+            health: Health {
+                current: 20,
+                max: 20,
+            },
+            anim: AnimationState {
+                clip: "idle_down".into(),
+            },
+            state_timer: StateTimer(0.0),
+            transform: Transform::from_translation(spawn_pos.extend(0.0)),
+            global_transform: GlobalTransform::default(),
+        }
+    }
+}
+```
 
 
 ## 把调料装进瓶子里...
