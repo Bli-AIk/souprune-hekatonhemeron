@@ -604,9 +604,64 @@ enum AppState {
 
 ## 把调料本身准备好！
 
-好吧，我刚刚就不该一个个给代码列出来，因为要是一重构那我光是列就得列半天——你们不会自己看git提交记录吗（
+好吧，我刚刚就不该一个个给代码列出来，因为要是一重构那我光是列就得列半天—— ~~你们不会自己看git提交记录吗（~~
 
-所以，我在刚刚的基础上加了点细节——把 Overworld 的 setup 改为了个组件……所以进行了一个小重构。大概是这样吧。
+所以，我在刚刚的基础上加了点细节——把 Overworld 的 setup 改为了个组件；把角色相关的状态机代码准备好；把摄像机也给调好……顺带进行了一个~~小~~重构。大概是这样吧。
+
+```
+src
+├── core
+│   ├── core_components.rs
+│   ├── overworld
+│   │   ├── character
+│   │   │   ├── character_system.rs
+│   │   │   ├── readme.md
+│   │   │   ├── states
+│   │   │   │   └── state_components.rs
+│   │   │   └── states.rs
+│   │   ├── character.rs
+│   │   └── readme.md
+│   ├── overworld.rs
+│   ├── resource.rs
+│   └── setup.rs
+├── core.rs
+├── extra
+│   └── markdown_asset_loader.rs
+├── extra.rs
+└── main.rs
+```
+
+还是不废话我都做了啥吧，有需要就去扒 git 历史记录[^4]。
+
+不管怎样，状态已经有了：
+
+```rust
+#[derive(Component)]
+pub(crate) struct Idle;
+#[derive(Component)]
+pub(crate) struct Walking;
+#[derive(Component)]
+pub(crate) struct Running;
+
+```
+
+但关键的是如何实现。
+
+```rust
+fn update_idle_system(query: Query<&Name, With<Idle>>) {
+    //TODO
+}
+
+fn update_walking_system(query: Query<&Name, With<Walking>>) {
+    //TODO
+}
+
+fn update_running_system(query: Query<&Name, With<Running>>) {
+    //TODO
+}
+
+```
+
 
 
 ## 把调料装进瓶子里...
@@ -625,6 +680,8 @@ enum AppState {
 
 [^1]: [【C#基础 + WinForms-哔哩哔哩】](https://www.bilibili.com/video/BV1Gx411U7Hb)，虽然讲的磨叽点吧，但毕竟是引我上路的教程，还是挺好的。C#真是最好学的编程语言了。
 
-[^2]: [【Unity2D官方入门教程 Ruby' Adventure 完整版~-哔哩哔哩】](https://www.bilibili.com/BV1V4411W787)，我个人觉得是相当权威的 Unity 入门教程，要是大伙儿都看过一遍就太好了。
+[^2]: [【Unity2D官方入门教程 Ruby' Adventure 完整版~-哔哩哔哩】](https://www.bilibili.com/BV1V4411W787)，我个人觉得是~~针对野路子来说~~相当权威的 Unity 入门教程，要是大伙儿都看过一遍就太好了。
 
 [^3]: 官方参考[见此](https://docs.rs/bevy/latest/bevy/asset/trait.AssetLoader.html)。
+
+[^4]: [feat(core): Adding a standard character state machine #6](https://github.com/Bli-AIk/souprune/pull/6)

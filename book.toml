@@ -11,3 +11,6 @@ default-theme = "latte"
 preferred-dark-theme = "mocha"
 no-section-label = true
 git-repository-url = "https://github.com/Bli-AIk/souprune-hekatonhemeron"
+
+[output.html.playground]
+runnable = false
