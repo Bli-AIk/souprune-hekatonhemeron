@@ -587,11 +587,26 @@ src
 
 大概如此……舒服点了。
 
-最后，我们在真去弄调料之前，还要考虑一件事——AppState。我们要针对dr/ut来设计。
+最后，我们在真去弄调料之前，还要考虑一件事——AppState。我们要针对dr/ut来设计：Overworld, Battle, Menu。大概是这仨，之后还可以再细分，给配一个子State啥的……（例如Overworld下的自由行动/追逐战/剧情、Battle下的我方回合/敌方回合...这都是后话了）
 
+```rust
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
+enum AppState {
+    #[default]
+    Setup,
+    Menu,
+    Overworld,
+    Battle,
+}
+```
 
+有时候一想到我做的东西的复杂度，和原作那一堆用 `toby 码 gml 程度的能力` 生堆出来的东西的区别，我就感到忍俊不禁。
 
 ## 把调料本身准备好！
+
+好吧，我刚刚就不该一个个给代码列出来，因为要是一重构那我光是列就得列半天——你们不会自己看git提交记录吗（
+
+所以，我在刚刚的基础上加了点细节——把 Overworld 的 setup 改为了个组件……所以进行了一个小重构。大概是这样吧。
 
 
 ## 把调料装进瓶子里...
