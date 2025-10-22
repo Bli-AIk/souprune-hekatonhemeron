@@ -25,9 +25,62 @@
 总而言之，大概做状态机不算难事，状态机就是...状态，没什么好说的。倒也有一个难点――我这还是第一次正儿八经用 bevy――但不是第一次正儿八经学rust、看ECS，也不是正儿八经第一次用游戏引擎，做游戏开发！唯一“第一次”的就是拿 rust 在 bevy 用 ECS 开发 游戏... 多看看示例就好啦！大概吧。
 
 
-## 把调料装进瓶子里...
+## 先把调料本身准备好！
 
 以往我都是在 OOP 下写状态机。思考了一会儿，然后我发现好像状态机在 ECS 下也有点新鲜嘛！毕竟从 OOP 转向 数据驱动，那思路还是有点区别的――但对于状态机来说，数据驱动明显更舒服一些。
+
+但是，我们还是需要先把调料本身准备好——咱现在不是在 Unity 里面了，不是把贴图拖进去就能用啦。Bevy里面的素材管理也是门学问。
+
+不过，我不想花太多功夫在管理素材上——我是做游戏的还是搞贴图的啊喂？所以说，现在先一切从简，我们参考 [texture_atlas](https://github.com/bevyengine/bevy/blob/main/examples/2d/texture_atlas.rs) 教程来生成图集。
+
+首先，这个实例里面定义了default_nearest。我们是像素游戏所以——没啥好说的。
+
+嗯，然后有一个 AppState。我喜欢叫它“大状态机”。Bevy 里面应该没有 Unity 式的（令人诟病的）场景系统。所以我们用一个更好配置的“大状态机”。这是一点毛病没有的。
+
+```rust
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
+enum AppState {
+    #[default]
+    Setup,
+    Finished,
+}
+```
+
+看没，我就说做游戏就是一会儿这个一会儿那个。我们需要做状态机——我是说，给角色的“小状态机”，但是不得不先把“大状态机”处理好。之后这样的事儿多着呢，哈哈——比方说接下来我们要处理素材。
+
+示例里面定义个了`RpgSpriteFolder`。来保存精灵文件夹的句柄。我们做同样的事情，但是起名为`OverWorldCharacterSpriteFolder`。
+
+```rust
+#[derive(Resource, Default)]
+struct OverWorldCharacterSpriteFolder(Handle<LoadedFolder>);
+
+fn load_textures(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(OverWorldCharacterSpriteFolder(
+        asset_server.load_folder("textures/overworld/characters"),
+    ));
+}
+```
+名字很长，但我的显示器放得下，并且一目了然—— OverWorld 下的角色 Sprite 文件夹。那就没问题。
+
+这里，我把读取的路径设为了 `textures/overworld/characters`。
+
+哦对了，现在的 `main` 方法长这样：
+```rust
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .init_state::<AppState>()
+        .add_systems(OnEnter(AppState::Setup), load_textures)
+        .run();
+}
+```
+
+好，弄到这里就很不错了。休息一下。休息的方式就是先不敲码了，先把贴图给处理好。
+
+
+
+## 把调料装进瓶子里...
+
 
 ## ...然后倒入另一个瓶子
 
