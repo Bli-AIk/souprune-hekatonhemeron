@@ -756,6 +756,11 @@ impl CharacterBundle {
 }
 ```
 
+好的，这些框我都搞定了。然后我睡了一觉起来（对的谁说“百日谈”就必须一个环节占正好一天的？），在准备敲码前先去 GitHub 刷刷刷，然后...
+
+[seldom_state](https://github.com/Seldom-SE/seldom_state) 是何意味啊。有现成的有限状态机轮子...？
+
+...那我们接下来要做的工作就简单多了。
 
 ## 把调料装进瓶子里...
 
