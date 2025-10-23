@@ -872,6 +872,14 @@ impl Default for PlayerInputSettings {
 “坠落”动画状态
 
 
+---
+
+企划时间：2025-10-22
+
+完成时间：
+
+
+
 [^1]: [【C#基础 + WinForms-哔哩哔哩】](https://www.bilibili.com/video/BV1Gx411U7Hb)，虽然讲的磨叽点吧，但毕竟是引我上路的教程，还是挺好的。C#真是最好学的编程语言了。
 
 [^2]: [【Unity2D官方入门教程 Ruby' Adventure 完整版~-哔哩哔哩】](https://www.bilibili.com/BV1V4411W787)，我个人觉得是~~针对野路子来说~~相当权威的 Unity 入门教程，要是大伙儿都看过一遍就太好了。
