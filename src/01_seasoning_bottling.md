@@ -775,7 +775,7 @@ use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
 #[derive(Actionlike, PartialEq, Eq, Hash, Clone, Copy, Debug, Reflect)]
-enum Action {
+pub enum Action {
     Up,
     Down,
     Left,
@@ -785,18 +785,24 @@ enum Action {
     Menu,
 }
 
-struct PlayerInputSettings {
+#[derive(Resource)]
+pub(crate) struct PlayerInputSettings {
     maps: Vec<InputMap<Action>>,
-    current_index: usize,
 }
 
 impl PlayerInputSettings {
-    fn active_map(&self) -> &InputMap<Action> {
-        &self.maps[self.current_index]
+    pub fn get_map(&self, index: usize) -> &InputMap<Action> {
+        self.maps.get(index).unwrap()
     }
-
-    fn switch_to(&mut self, index: usize) {
-        self.current_index = index.min(self.maps.len() - 1);
+    
+    pub fn get_merged_map(&self) -> InputMap<Action> {
+        let mut merged = InputMap::default();
+        
+        for map in &self.maps {
+            merged.merge(map);
+        }
+        
+        merged
     }
 }
 
@@ -846,22 +852,162 @@ impl Default for PlayerInputSettings {
                 map_key_alternate_1,
                 map_gamepad_default,
             ],
-            current_index: 0,
         }
     }
 }
+
 ```
 
 这套按键配置也是 UCT 的遗产啊。令人感叹。
 
 
+对应的，玩家生成那里是这么写的
 
+```rust
+    commands.spawn((
+        Idle,
+        PlayerControlled,
+        StateMachine::default()
+            .trans::<Idle, _>(is_walking, Walking)
+            .trans::<Walking, _>(is_walking.not(), Idle)
+            .set_trans_logging(true),
+        player_input.get_merged_map(),
+        ActionState::<Action>::default(),
+        CharacterBundle::new(Vec2::new(0.0, 0.0), Direction::Down, sprite.clone()),
+    ));
 
+    
+fn is_walking(query: Query<&ActionState<Action>, With<PlayerControlled>>) -> Result<(), ()> {
+    let action_state = query.single().map_err(|_| ())?;
+    if action_state.pressed(&Action::Left)
+        || action_state.pressed(&Action::Right)
+        || action_state.pressed(&Action::Up)
+        || action_state.pressed(&Action::Down)
+    {
+        Ok(())
+    } else {
+        Err(())
+    }
+}
 
+```
 
+不赖。我们终于可以开始写状态啦！哦，还需要个速度组件...
 
-站立和行走状态
+```rust
+#[derive(Component)]
+pub(crate) struct Speed(pub f32);
+```
 
+还有就是，角度得改成八个：
+
+```rust
+
+#[derive(Default)]
+pub(crate) enum Direction {
+    Up,
+    #[default]
+    Down,
+    Left,
+    Right,
+    UpLeft,
+    UpRight,
+    DownLeft,
+    DownRight,
+}
+impl Direction {
+    pub fn as_vec2(&self) -> Vec2 {
+        match self {
+            Direction::Up => Vec2::Y,
+            Direction::Down => -Vec2::Y,
+            Direction::Left => -Vec2::X,
+            Direction::Right => Vec2::X,
+            Direction::UpLeft => Vec2::new(-1.0, 1.0).normalize(),
+            Direction::UpRight => Vec2::new(1.0, 1.0).normalize(),
+            Direction::DownLeft => Vec2::new(-1.0, -1.0).normalize(),
+            Direction::DownRight => Vec2::new(1.0, -1.0).normalize(),
+        }
+    }
+}
+```
+
+然后就好啦！看看我们最后的代码吧——
+
+```rust
+use crate::core::core_components::{Facing, Position, Speed};
+use crate::core::input::Action;
+use crate::core::overworld::character::character_components::{Idle, Running, Walking};
+use bevy::prelude::*;
+use leafwing_input_manager::action_state::*;
+
+pub(crate) fn update_idle_system(
+    mut query: Query<(&mut Position, &mut Facing, &Speed), With<Idle>>,
+) {
+    // TODO: 实现 Idle 状态逻辑
+}
+
+pub(crate) fn update_walking_system(
+    time: Res<Time>,
+    mut query: Query<(&mut Position, &mut Facing, &Speed, &ActionState<Action>), With<Walking>>,
+) {
+    for (mut pos, mut facing, speed, action_state) in query.iter_mut() {
+        use crate::core::core_components::*;
+        
+        // 计算移动方向
+        let mut direction_vec = Vec2::ZERO;
+        if action_state.pressed(&Action::Up) { direction_vec.y += 1.0; }
+        if action_state.pressed(&Action::Down) { direction_vec.y -= 1.0; }
+        if action_state.pressed(&Action::Left) { direction_vec.x -= 1.0; }
+        if action_state.pressed(&Action::Right) { direction_vec.x += 1.0; }
+        
+        let new_direction = match (direction_vec.x as i32, direction_vec.y as i32) {
+            (0, 1) => Some(Direction::Up),
+            (0, -1) => Some(Direction::Down),
+            (-1, 0) => Some(Direction::Left),
+            (1, 0) => Some(Direction::Right),
+            (-1, 1) => Some(Direction::UpLeft),
+            (1, 1) => Some(Direction::UpRight),
+            (-1, -1) => Some(Direction::DownLeft),
+            (1, -1) => Some(Direction::DownRight),
+            _ => None,
+        };
+        
+        if let Some(direction) = new_direction {
+            facing.value = direction;
+            pos.value += facing.value.as_vec2() * speed.value * time.delta_secs();
+        }
+    }
+}
+
+pub(crate) fn update_running_system(
+    mut query: Query<(&mut Position, &mut Facing, &Speed), With<Running>>,
+) {
+    for (mut pos, mut facing, speed) in query.iter_mut() {
+        // TODO: 实现 Running 状态逻辑
+    }
+}
+
+```
+
+站立状态下，目前我们不用做任何事情。行走……就是行走。
+
+但是站立还是要留着，因为之后还得处理动画呢……嗯……
+
+不管怎样，小小的庆祝一下！因为现在动起来了！
+
+```
+ ______________________
+< 动起来呀，动起来呀！ >
+ ----------------------
+        \
+         \
+            _~^~^~_
+        \) /  o o  \ (/
+          '_   -   _'
+          / '-----' \
+```
+
+~~是 Ferris 老师让我动起来的！动起来呀，动起来呀！~~
 
 ## ...然后倒入另一个瓶子
 
