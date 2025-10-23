@@ -1161,18 +1161,178 @@ fn is_running(query: Query<&ActionState<Action>, With<PlayerControlled>>) -> Res
 
 现在这游戏里面没有任何动画。如果我还在 unity，那我就可以光速用 animator 不太优雅地解决战斗。但这里是 RUST！所以...
 
-先想想怎么把帧动画给处理了吧。
+先想想怎么把帧动画给处理了吧……先看看目前的资源结构！
 
-## 别把瓶子整掉地上了啊喂
+```
+assets
+└── textures
+    └── overworld
+        └── characters
+            ├── flowey
+            │   ├── idle
+            │   │   ├── flowey-idle-0.png
+            │   │   └── flowey-idle-1.png
+            │   └── sink
+            │       ├── flowey-sink-0.png
+            │       ├── flowey-sink-1.png
+            │       ├── flowey-sink-2.png
+            │       ├── flowey-sink-3.png
+            │       ├── flowey-sink-4.png
+            │       └── flowey-sink-5.png
+            ├── frisk
+            │   ├── run
+            │   │   ├── frisk-run-down-1.png
+            │   │   ├── frisk-run-down-2.png
+            │   │   ├── frisk-run-down-3.png
+            │   │   ├── frisk-run-down-4.png
+            │   │   ├── frisk-run-down-5.png
+            │   │   ├── frisk-run-down-6.png
+            │   │   ├── frisk-run-left-1.png
+            │   │   ├── frisk-run-left-2.png
+            │   │   ├── frisk-run-left-3.png
+            │   │   ├── frisk-run-left-4.png
+            │   │   ├── frisk-run-left-5.png
+            │   │   ├── frisk-run-left-6.png
+            │   │   ├── frisk-run-right-1.png
+            │   │   ├── frisk-run-right-2.png
+            │   │   ├── frisk-run-right-3.png
+            │   │   ├── frisk-run-right-4.png
+            │   │   ├── frisk-run-right-5.png
+            │   │   ├── frisk-run-right-6.png
+            │   │   ├── frisk-run-up-1.png
+            │   │   ├── frisk-run-up-2.png
+            │   │   ├── frisk-run-up-3.png
+            │   │   ├── frisk-run-up-4.png
+            │   │   ├── frisk-run-up-5.png
+            │   │   ├── frisk-run-up-6.png
+            │   │   └── readme.md
+            │   └── walk
+            │       ├── frisk-walk-down-1.png
+            │       ├── frisk-walk-down-2.png
+            │       ├── frisk-walk-down-3.png
+            │       ├── frisk-walk-down-4.png
+            │       ├── frisk-walk-left-1.png
+            │       ├── frisk-walk-left-2.png
+            │       ├── frisk-walk-right-1.png
+            │       ├── frisk-walk-right-2.png
+            │       ├── frisk-walk-up-1.png
+            │       ├── frisk-walk-up-2.png
+            │       ├── frisk-walk-up-3.png
+            │       └── frisk-walk-up-4.png
+            └── toriel
+                └── walk
+                    ├── toriel-walk-down-0.png
+                    ├── toriel-walk-down-1.png
+                    ├── toriel-walk-down-2.png
+                    ├── toriel-walk-down-3.png
+                    ├── toriel-walk-down-talk-0.png
+                    ├── toriel-walk-down-talk-1.png
+                    ├── toriel-walk-left-0.png
+                    ├── toriel-walk-left-1.png
+                    ├── toriel-walk-left-2.png
+                    ├── toriel-walk-left-3.png
+                    ├── toriel-walk-left-talk-0.png
+                    ├── toriel-walk-left-talk-1.png
+                    ├── toriel-walk-up-0.png
+                    ├── toriel-walk-up-1.png
+                    ├── toriel-walk-up-2.png
+                    └── toriel-walk-up-3.png
+```
 
-“坠落”动画状态
+好吧，这着实也不是很优雅。很多命名和路径都重复了——没必要。让我们把一切以路径为主吧。
 
+```
+assets
+└── textures
+    └── overworld
+        └── characters
+            ├── flowey
+            │   ├── idle
+            │   │   ├── 0.png
+            │   │   └── 1.png
+            │   └── sink
+            │       ├── 0.png
+            │       ├── 1.png
+            │       ├── 2.png
+            │       ├── 3.png
+            │       ├── 4.png
+            │       └── 5.png
+            ├── frisk
+            │   ├── run
+            │   │   ├── down
+            │   │   │   ├── 1.png
+            │   │   │   ├── 2.png
+            │   │   │   ├── 3.png
+            │   │   │   ├── 4.png
+            │   │   │   ├── 5.png
+            │   │   │   └── 6.png
+            │   │   ├── readme.md
+            │   │   ├── side
+            │   │   │   ├── 1.png
+            │   │   │   ├── 2.png
+            │   │   │   ├── 3.png
+            │   │   │   ├── 4.png
+            │   │   │   ├── 5.png
+            │   │   │   └── 6.png
+            │   │   └── up
+            │   │       ├── 1.png
+            │   │       ├── 2.png
+            │   │       ├── 3.png
+            │   │       ├── 4.png
+            │   │       ├── 5.png
+            │   │       └── 6.png
+            │   └── walk
+            │       ├── down
+            │       │   ├── 1.png
+            │       │   ├── 2.png
+            │       │   ├── 3.png
+            │       │   └── 4.png
+            │       ├── side
+            │       │   ├── 1.png
+            │       │   └── 2.png
+            │       └── up
+            │           ├── 1.png
+            │           ├── 2.png
+            │           ├── 3.png
+            │           └── 4.png
+            └── toriel
+                └── walk
+                    ├── down
+                    │   ├── 0.png
+                    │   ├── 1.png
+                    │   ├── 2.png
+                    │   ├── 3.png
+                    │   └── talk
+                    │       ├── 0.png
+                    │       └── 1.png
+                    ├── side
+                    │   ├── 0.png
+                    │   ├── 1.png
+                    │   ├── 2.png
+                    │   ├── 3.png
+                    │   └── talk
+                    │       ├── 0.png
+                    │       └── 1.png
+                    └── up
+                        ├── 0.png
+                        ├── 1.png
+                        ├── 2.png
+                        └── 3.png
+```
+
+这就行了，路径和名字没有重复——干净，利索，并且喜欢全局搜索的小朋友们有福了。我本来寻思本文的之后还要来一些部分来写一下动画的实现……但那有点超纲了！咱不今儿不就是要搓状态机吗？我怎么做了这么多杂七杂八的，都写到一千来行了？？？
+
+所以说……啊。就这样得了。PR 提上去，第一天的事儿就完成了。之后的事情之后再说吧！嗯大概就这样。
+
+我们明天就能看到 Frisk 真正的动起来咯……！
 
 ---
 
 企划时间：2025-10-22
 
-完成时间：
+开始时间：2025-10-22
+
+完成时间：2025-10-23
 
 
 
