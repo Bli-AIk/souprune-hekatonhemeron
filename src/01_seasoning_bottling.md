@@ -764,6 +764,102 @@ impl CharacterBundle {
 
 ## 把调料装进瓶子里...
 
+我们来着手搓状态机吧！……哦还缺一个桌子，输入系统。淦！！！
+
+好在这里也有轮子，有点 Unity Input System 感觉的轮子——[leafwing-input-manager](https://github.com/Leafwing-Studios/leafwing-input-manager).
+
+那就来吧。`input.rs`直接码上。~~有新的旅行伙伴加入了呦~~
+
+```rust
+use bevy::prelude::*;
+use leafwing_input_manager::prelude::*;
+
+#[derive(Actionlike, PartialEq, Eq, Hash, Clone, Copy, Debug, Reflect)]
+enum Action {
+    Up,
+    Down,
+    Left,
+    Right,
+    Confirm,
+    Cancel,
+    Menu,
+}
+
+struct PlayerInputSettings {
+    maps: Vec<InputMap<Action>>,
+    current_index: usize,
+}
+
+impl PlayerInputSettings {
+    fn active_map(&self) -> &InputMap<Action> {
+        &self.maps[self.current_index]
+    }
+
+    fn switch_to(&mut self, index: usize) {
+        self.current_index = index.min(self.maps.len() - 1);
+    }
+}
+
+impl Default for PlayerInputSettings {
+    fn default() -> Self {
+        use Action::*;
+        use KeyCode::*;
+        let mut map_key_default = InputMap::default();
+
+        map_key_default.insert(Up, ArrowUp);
+        map_key_default.insert(Down, ArrowDown);
+        map_key_default.insert(Left, ArrowLeft);
+        map_key_default.insert(Right, ArrowRight);
+        map_key_default.insert(Confirm, KeyZ);
+        map_key_default.insert(Cancel, KeyX);
+        map_key_default.insert(Menu, KeyC);
+
+        let mut map_key_alternate_0 = InputMap::default();
+
+        map_key_alternate_0.insert(Up, KeyW);
+        map_key_alternate_0.insert(Down, KeyS);
+        map_key_alternate_0.insert(Left, KeyA);
+        map_key_alternate_0.insert(Right, KeyD);
+        map_key_alternate_0.insert(Confirm, Enter);
+        map_key_alternate_0.insert(Cancel, ShiftLeft);
+        map_key_alternate_0.insert(Menu, ControlLeft);
+
+        let mut map_key_alternate_1 = InputMap::default();
+
+        map_key_alternate_1.insert(Cancel, ShiftRight);
+        map_key_alternate_1.insert(Menu, ControlRight);
+
+        let mut map_gamepad_default = InputMap::default();
+        use GamepadButton::*;
+        map_gamepad_default.insert(Up, DPadUp);
+        map_gamepad_default.insert(Down, DPadDown);
+        map_gamepad_default.insert(Left, DPadLeft);
+        map_gamepad_default.insert(Right, DPadRight);
+        map_gamepad_default.insert(Confirm, South);
+        map_gamepad_default.insert(Cancel, East);
+        map_gamepad_default.insert(Menu, North);
+
+        Self {
+            maps: vec![
+                map_key_default,
+                map_key_alternate_0,
+                map_key_alternate_1,
+                map_gamepad_default,
+            ],
+            current_index: 0,
+        }
+    }
+}
+```
+
+这套按键配置也是 UCT 的遗产啊。令人感叹。
+
+
+
+
+
+
+
 站立和行走状态
 
 
