@@ -1372,7 +1372,7 @@ assets
 
 完成时间：2025-10-23
 
-关联的 PR：https://github.com/Bli-AIk/souprune/pull/6
+关联的 PR：[#6](https://github.com/Bli-AIk/souprune/pull/6)
 
 
 
