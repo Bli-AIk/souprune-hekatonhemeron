@@ -1372,6 +1372,8 @@ assets
 
 完成时间：2025-10-23
 
+关联的 PR：https://github.com/Bli-AIk/souprune/pull/6
+
 
 
 [^1]: [【C#基础 + WinForms-哔哩哔哩】](https://www.bilibili.com/video/BV1Gx411U7Hb)，虽然讲的磨叽点吧，但毕竟是引我上路的教程，还是挺好的。C#真是最好学的编程语言了。
