@@ -12,12 +12,56 @@
 
 不管怎样，这些大概就是准备工作了。我们开干吧。
 
-
-
-
-动画
-
 # 02 - 贴满标签
+
+秉承着能不造轮子就不造轮子的原则，我打算用 [bevy_spritesheet_animation](https://github.com/merwaaan/bevy_spritesheet_animation) 来搞定动画系统。但是捏，这里还有一个小问题——我们的素材使用了 TextureAtlas 打包。
+
+这就有点尴尬咯。这个插件自己搓了个 Spritesheet API。就它这个示例来看，要用一张铺好的图来生成动画——我才懒得搞呢。
+
+但这也不是唯一的解决方案……对吧。至少我还看到了
+
+```rust
+let clip = Clip::from_frames([6, 7, 8, 9, 10, 11]);
+```
+
+这样的用法……嗯……所以先把配置文件做了吧。我们如果能传路径索引，那也就可以了。
+
+我选择了经典方案 `yaml`，这比 `json` 好一万倍。
+
+```yaml
+textures:
+  overworld:
+    characters:
+      flowey:
+        idle:
+          path: "textures/overworld/characters/flowey/idle"
+        sink:
+          path: "textures/overworld/characters/flowey/sink"
+      
+      frisk:
+        run:
+          down:
+            path: "textures/overworld/characters/frisk/run/down"
+          side:
+            path: "textures/overworld/characters/frisk/run/side"
+          up:
+            path: "textures/overworld/characters/frisk/run/up"
+    
+    objects:
+      everywhere:
+        chestbox:
+          path: "textures/overworld/objects/everywhere/chestbox.png"
+        savepoint:
+          path: "textures/overworld/objects/everywhere/savepoint"
+
+```
+哦，对的，这里多了个 objects，里面有 chestbox 和 savepoint。chestbox是单图，savepoint是动图。单图使用文件路径，而动图就是文件夹路径。一目了然哦。
+
+之后没准也会拓展这个配置文件，例如让你自己选定帧之类的。但目前的实现就是：单图就是单图，文件夹就是动画。
+
+虽然我也试了试 `toml`，但是写一大堆 `[textures.overworld.characters.frisk.run.down]` 之类的还是太抽象了。所以 PASS 掉……
+
+然后，我们来做动画吧——来跟 `bevy_spritesheet_animation` 对线！
 
 ## 别把瓶子整掉地上了啊喂
 
