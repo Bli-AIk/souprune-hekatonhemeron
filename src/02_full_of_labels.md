@@ -29,74 +29,102 @@ let clip = Clip::from_frames([6, 7, 8, 9, 10, 11]);
 所以，我们来使用 plus 版 `ini`... `toml`.
 
 ```toml
-[[textures]]
+# Here is the configuration file of the game resources, which defines the paths of various animations and sprites.
+# Each resource has a unique name and corresponding file path for easy reference in game code.
+# For animation resources, horizontal flipping (flip_x) and vertical flipping (flip_y) are turned off by default.
+# And looping is enabled by default.
+# These can be set as needed.
+
 # ---overworld---
-# -characters-
+# --characters--
+# -flowey-
+[[animations]]
 name = "flowey_idle"
 path = "textures/overworld/characters/flowey/idle"
 
-[[textures]]
+[[animations]]
 name = "flowey_sink"
 path = "textures/overworld/characters/flowey/sink"
 
-[[textures]]
+# -frisk-
+# walk
+[[animations]]
+name = "frisk_idle_down"
+path = "textures/overworld/characters/frisk/walk/down/0"
+
+[[animations]]
+name = "frisk_idle_left"
+path = "textures/overworld/characters/frisk/walk/side/0"
+
+[[animations]]
+name = "frisk_idle_right"
+path = "textures/overworld/characters/frisk/walk/side/0"
+flip_x = true
+
+[[animations]]
+name = "frisk_idle_up"
+path = "textures/overworld/characters/frisk/walk/up/0"
+# walk
+[[animations]]
 name = "frisk_walk_down"
 path = "textures/overworld/characters/frisk/walk/down"
 
-[[textures]]
+[[animations]]
 name = "frisk_walk_left"
 path = "textures/overworld/characters/frisk/walk/side"
 
-[[textures]]
+[[animations]]
 name = "frisk_walk_right"
 path = "textures/overworld/characters/frisk/walk/side"
 flip_x = true
 
-[[textures]]
+[[animations]]
 name = "frisk_walk_up"
 path = "textures/overworld/characters/frisk/walk/up"
 
-[[textures]]
+# run
+[[animations]]
 name = "frisk_run_down"
 path = "textures/overworld/characters/frisk/run/down"
 
-[[textures]]
+[[animations]]
 name = "frisk_run_left"
 path = "textures/overworld/characters/frisk/run/side"
 
-[[textures]]
+[[animations]]
 name = "frisk_run_right"
 path = "textures/overworld/characters/frisk/run/side"
 flip_x = true
 
-[[textures]]
+[[animations]]
 name = "frisk_run_up"
 path = "textures/overworld/characters/frisk/run/up"
 
-[[textures]]
+# -toriel-
+[[animations]]
 name = "toriel_walk_down"
 path = "textures/overworld/characters/toriel/walk/down"
 
-[[textures]]
+[[animations]]
 name = "toriel_walk_left"
 path = "textures/overworld/characters/toriel/walk/left"
 
-[[textures]]
+[[animations]]
 name = "toriel_walk_right"
 path = "textures/overworld/characters/toriel/walk/right"
 flip_x = true
 
-[[textures]]
+[[animations]]
 name = "toriel_walk_up"
 path = "textures/overworld/characters/toriel/walk/up"
 
 # -objects-
 # everywhere
-[[textures]]
+[[sprites]]
 name = "chest_box"
 path = "textures/overworld/objects/everywhere/chestbox.png"
 
-[[textures]]
+[[animations]]
 name = "save_point"
 path = "textures/overworld/objects/everywhere/savepoint"
 ```
@@ -111,6 +139,177 @@ path = "textures/overworld/objects/everywhere/savepoint"
 谁懂扒完所有示例库后，发现这个库的实现完全针对切分单图而不支持不规则纹理图集的救赎感……我真不希望搞出一大堆 draw call.
 
 所以，还是照着[示例](https://github.com/bevyengine/bevy/blob/latest/examples/2d/sprite_animation.rs)自己造轮子吧。
+
+所以我先把 `create_texture_atlas` 方法微调了一下——加入了一个 `HashMap` 来存储贴图的路径索引。
+
+```rust
+   let mut index_map = HashMap::new();
+   let mut added_count = 0;
+
+    for handle in folder.handles.iter() {
+        if let Some(path) = handle.path() {
+            let path_str = path.to_string();
+            if !path_str.ends_with(".png")
+                && !path_str.ends_with(".jpg")
+                && !path_str.ends_with(".jpeg")
+            {
+                continue;
+            }
+            index_map.insert(path_str, added_count);
+            added_count += 1;
+        }
+```
+
+之后返回的就是
+
+```rust
+    (
+        texture_atlas_layout,
+        texture_atlas_sources,
+        texture,
+        index_map,
+    )
+```
+
+而我们原本的 sprite handle 就自然而然的改为了 index...
+
+```rust
+ let loaded_folder = loaded_folders.get(&rpg_sprite_handles.0).unwrap();
+
+    let (texture_atlas_nearest, _nearest_sources, nearest_texture, index_map) =
+        create_texture_atlas(
+            loaded_folder,
+            None,
+            Some(ImageSampler::nearest()),
+            &mut textures,
+        );
+    println!("index_map: {:#?}", &index_map);
+
+    let atlas_nearest_handle = texture_atlases.add(texture_atlas_nearest);
+
+    let frisk_index = *index_map
+        .get("textures/overworld/characters/frisk/walk/down/1.png")
+        .expect("Frisk sprite not found in atlas");
+
+    println!("index: {:#?}", &frisk_index);
+    let sprite = Sprite::from_atlas_image(
+        nearest_texture,
+        TextureAtlas {
+            layout: atlas_nearest_handle.clone(),
+            index: frisk_index,
+        },
+    );
+```
+
+这样性能总比扒一遍路径强。
+
+话虽如此，咱这时候又看到 `OverWorldCharacterSpriteFolder` —— 它只针对 `overworld` 资源文件夹。
+
+我们先考虑一下未来复杂的情况吧。于是我额外创建了 `battle` 文件夹。
+
+```rust
+assets
+├── config.toml
+└── textures
+    ├── battle
+    │   └── ui
+    │       ├── act
+    │       │   ├── 0.png
+    │       │   └── 1.png
+    │       ├── fight
+    │       │   ├── 0.png
+    │       │   └── 1.png
+    │       ├── item
+    │       │   ├── 0.png
+    │       │   └── 1.png
+    │       └── mercy
+    │           ├── 0.png
+    │           └── 1.png
+    └── overworld
+        ├── characters
+        │   ├── flowey
+        │   │   ├── idle
+        │   │   │   ├── 0.png
+        │   │   │   └── 1.png
+        │   │   └── sink
+        │   │       ├── 0.png
+        │   │       ├── 1.png
+        │   │       ├── 2.png
+        │   │       ├── 3.png
+        │   │       ├── 4.png
+        │   │       └── 5.png
+        │   ├── frisk
+        │   │   ├── run
+        │   │   │   ├── down
+        │   │   │   │   ├── 1.png
+        │   │   │   │   ├── 2.png
+        │   │   │   │   ├── 3.png
+        │   │   │   │   ├── 4.png
+        │   │   │   │   ├── 5.png
+        │   │   │   │   └── 6.png
+        │   │   │   ├── readme.md
+        │   │   │   ├── side
+        │   │   │   │   ├── 1.png
+        │   │   │   │   ├── 2.png
+        │   │   │   │   ├── 3.png
+        │   │   │   │   ├── 4.png
+        │   │   │   │   ├── 5.png
+        │   │   │   │   └── 6.png
+        │   │   │   └── up
+        │   │   │       ├── 1.png
+        │   │   │       ├── 2.png
+        │   │   │       ├── 3.png
+        │   │   │       ├── 4.png
+        │   │   │       ├── 5.png
+        │   │   │       └── 6.png
+        │   │   └── walk
+        │   │       ├── down
+        │   │       │   ├── 1.png
+        │   │       │   ├── 2.png
+        │   │       │   ├── 3.png
+        │   │       │   └── 4.png
+        │   │       ├── side
+        │   │       │   ├── 1.png
+        │   │       │   └── 2.png
+        │   │       └── up
+        │   │           ├── 1.png
+        │   │           ├── 2.png
+        │   │           ├── 3.png
+        │   │           └── 4.png
+        │   └── toriel
+        │       └── walk
+        │           ├── down
+        │           │   ├── 0.png
+        │           │   ├── 1.png
+        │           │   ├── 2.png
+        │           │   ├── 3.png
+        │           │   └── talk
+        │           │       ├── 0.png
+        │           │       └── 1.png
+        │           ├── side
+        │           │   ├── 0.png
+        │           │   ├── 1.png
+        │           │   ├── 2.png
+        │           │   ├── 3.png
+        │           │   └── talk
+        │           │       ├── 0.png
+        │           │       └── 1.png
+        │           └── up
+        │               ├── 0.png
+        │               ├── 1.png
+        │               ├── 2.png
+        │               └── 3.png
+        └── objects
+            └── everywhere
+                ├── chestbox.png
+                └── savepoint
+                    ├── 0.png
+                    └── 1.png
+```
+
+目前放的都是 `undertale` 的贴图。之后还得把 `deltarune` 考虑上……到时候再说（
+
+
 
 ## 别把瓶子整掉地上了啊喂
 
