@@ -319,7 +319,7 @@ assets
 
 ## 🎭 动画系统大改造
 
-首先说最核心的——我彻底重写了动画系统！之前那个简陋的资源管理现在变成了一个功能完整的sprite动画框架：
+首先说最核心的——彻底重写了动画系统！之前那个简陋的资源管理现在变成了一个功能完整的sprite动画框架：
 
 ### 🏗️ 架构重构
 - **模块化重组**：把原来混在一起的代码拆分成了 `animation/`、`sprite/`、`overworld/` 等独立模块
@@ -397,7 +397,7 @@ assets/textures/
 
 ### 📚 文档与依赖阶段
 **`dc6e285`** - `docs: add Undertale-Changer-Template to dependencies table`  
-开始之前先把依赖表更新了，把 Undertale-Changer-Template 加进去。总得让人知道我们用了什么轮子嘛。
+开始之前先把依赖表更新了，把 Undertale-Changer-Template 加进去。总得让人知道谁才是爹嘛。
 
 ### 🎬 动画系统雏形
 **`33baa48`** - `feat(core): add animation system and asset configuration`  
@@ -483,13 +483,15 @@ Frisk角色动画更新，配置完善。可以看到走路、跑步动画了！
 纹理图集缓存！避免重复注册，内存使用更高效。
 
 **`1ede321`** - `feat(animation): add reset method and immediate sprite update`  
-**就是我们刚才修复的那个！**动画切换延迟问题终于解决，按键响应变得超级灵敏！🎉
+**刚才修复的那个！**动画切换延迟问题终于解决，按键响应变得超级灵敏！🎉
 
 ---
 
 整个开发过程可以看出是一个**持续迭代优化**的过程：从最初的简单实现，到架构重构，再到性能优化，最后到用户体验的精雕细琢。每一步都在让系统变得更好用、更稳定、更优雅。
 
 ---AI内容结束，辛苦啦AI大人---
+
+天哪，这可太 AI 了。哈哈。
 
 ## 别把瓶子整掉地上了啊喂
 
