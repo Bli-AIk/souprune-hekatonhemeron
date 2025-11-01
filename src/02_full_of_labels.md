@@ -506,4 +506,4 @@ Frisk角色动画更新，配置完善。可以看到走路、跑步动画了！
 
 完成时间：2025-10-31
 
-关联的 PR：[#6](https://github.com/Bli-AIk/souprune/pull/6)
+关联的 PR：[#7](https://github.com/Bli-AIk/souprune/pull/7)
