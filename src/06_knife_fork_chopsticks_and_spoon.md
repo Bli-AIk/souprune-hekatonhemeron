@@ -1,4 +1,4 @@
-bevy_dialog_tools（异步/协程打字机，富文本解析/渲染，Mesh文本动画，对话事件系统）
+bevy_dialog_tools（异步/协程打字机，Mesh文本动画，对话事件系统），以及一个灵感源于 ink 和 yarn spinner 的 DSL。
 
 UCT 的遗产将会在 rust 社区熠熠生辉！（或继续吃灰）
 
