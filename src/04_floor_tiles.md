@@ -22,7 +22,9 @@ bro，你喜欢大理石地板还是木地板，还是砖头地板，或者土�
 
 不管怎样，把地图搭上吧。我想现在开始我们必须在这个文档里面上点图了……
 
-TODO: Tiled 权威教程之automapping太好用了你们知道吗
+~~TODO: Tiled 权威教程之automapping太好用了你们知道吗~~
+
+你知道吗？加个锤子。我到时候写文档说怎么用就得了呗，搁这儿磨叽啥啊。
 
 随后，实话实说，我没有立刻去集成 Tiled ―― 刚和 automapping 对完线，真的很累诶。
 
@@ -30,9 +32,110 @@ TODO: Tiled 权威教程之automapping太好用了你们知道吗
 
 ## ...再打胶？？
 
-尝试集成
+所以我把地图捏好后大概是这样的文件结构。levels文件夹位于assets文件夹下。
+
+```
+levels
+├── Demo.tiled-session
+├── ruins
+│   ├── ruins_2.tmx
+│   ├── ruins_3.tmx
+│   ├── ruins_objects.tsx
+│   ├── ruins.tsx
+│   ├── rules
+│   │   └── ruins_rules.tmx
+│   └── tiles
+│       ├── objects
+│       │   ├── bigweb_0.png
+│       │   ├── brand.png
+│       │   ├── candydish_0.png
+│       │   ├── candydish2_0.png
+│       │   ├── candydish2_1.png
+│       │   ├── candydish_bad_0.png
+│       │   ├── centeredhole_0.png
+│       │   ├── cheesetable_0.png
+│       │   ├── colorswitch_0.png
+│       │   ├── colorswitch_1.png
+│       │   ├── colorswitch_2.png
+│       │   ├── faceswitch_0.png
+│       │   ├── faceswitch_1.png
+│       │   ├── groundswitch1_0.png
+│       │   ├── groundswitch1_1.png
+│       │   ├── hole_0.png
+│       │   ├── hole2_0.png
+│       │   ├── ribbon_0.png
+│       │   ├── smallweb_0.png
+│       │   ├── spiketile_0.png
+│       │   ├── spiketile_1.png
+│       │   ├── switch_0.png
+│       │   ├── switch_1.png
+│       │   └── tornote_0.png
+│       └── ruins.png
+├── ruins.tiled-project
+├── ruins.tiled-session
+├── ruins.world
+└── rules.txt
+  
+```
+
+导入瓦片倒也简单……简单得有点过分了。
+
+```
+use crate::debug_info;
+use bevy::prelude::Commands;
+use bevy::prelude::*;
+use bevy_ecs_tiled::prelude::*;
+
+pub(crate) fn setup_tilemap(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+    commands.spawn((
+        TiledMap(asset_server.load("levels/ruins/ruins_3.tmx")),
+        TilemapAnchor::Center,
+        TiledMapLayerZOffset(10.0),
+    ));
+}
+
+pub(crate) fn filter_prototype_layers_and_set_z_order(
+    mut commands: Commands,
+    layers_query: Query<(Entity, &Name), Added<TiledLayer>>,
+) {
+    for (layer_entity, layer_name) in layers_query.iter() {
+        let layer_name_str = layer_name.as_str();
+
+        if layer_name_str.to_lowercase().contains("prototype") {
+            debug_info!("Hide prototype layer: {}", layer_name_str);
+            commands.entity(layer_entity).insert(Visibility::Hidden);
+        } else {
+            debug_info!("Show layers: {}", layer_name_str);
+
+            let z_offset = match layer_name_str {
+                name if name.contains("floor") => -2.5,
+                name if name.contains("wall") && !name.contains("on_wall") => -2.0,
+                name if name.contains("on_wall") => -1.5,
+                name if name.contains("objects") => -1.0,
+                _ => -3.0,
+            };
+
+            commands
+                .entity(layer_entity)
+                .insert(Transform::from_xyz(0.0, 0.0, z_offset));
+            debug_info!(
+                "Set the Z-axis position of layer {}: {}",
+                layer_name_str,
+                z_offset
+            );
+        }
+    }
+}
+
+```
+
+我调了一下图层之类的东西。反正现在看来显示的……相当的好。
+
+然后，我们还要准备配置一下obj...
 
 ## 铺到外屋去
+
+事实上，下面的部分可能是和第六章混着写的。切换房间本质上是个事件，对吧？那我们就得有事件系统……显而易见的。那是第六章的主题。
 
 跨房间
 
