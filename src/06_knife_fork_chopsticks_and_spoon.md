@@ -23,7 +23,7 @@ DemoBox1\<default><fx=flowey, evil><markPoint>啥<stop*10>呢。<waitForUpdate><
 
 我们要做两个大东西。
 
-一个是灵感源于 Ink 和 Yarn spinner 的 DSL ―― `mortar`（包括编译器，CLI，LSP），另一个是献给bevy社区的 `bevy_dialog_tools`（包括异步/协程打字机，Mesh文本动画，以及对接 mortar 的对话事件系统）。
+一个是灵感源于 Ink 和 Yarn spinner 的 DSL ―― `mortar`（包括编译器，CLI，LSP），另一个是献给bevy社区的 `bevy_dialog_tools`（包括异步/协程打字机，Mesh文本动画，对接 mortar 的对话系统，Overworld 事件系统集成）。
 
 是的，这些都是 UCT 已经实现（或者说，姑且算是实现了吧）的功能。我们要把他们都在 souprune 中... 不，是 rust 社区中，重新实现，更好的实现，贡献给大伙儿，但愿如此。
 
@@ -79,9 +79,15 @@ fn play_sound(value: String)
 在之后我们会去对接它！但现在，我们先给这玩意儿放一边，先来处理一些更有必要的东西...
 
 
-## 刀叉
+## 刀子
+
+fact rule event 事件系统
+
+## 叉子
 
 Mesh 文本动画
+
+我们 *fork* 了 bevy_rich_text3d (我的天啊哥们儿这什么滥币双关我不行了)
 
 ## 筷子
 
