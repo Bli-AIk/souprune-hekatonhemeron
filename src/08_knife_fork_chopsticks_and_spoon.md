@@ -19,7 +19,7 @@ DemoBox1\<default><fx=flowey, evil><markPoint>啥<stop*10>呢。<waitForUpdate><
 
 那么，就把厨具造出来吧。别家造厨房的还能从我这拿厨具用，这多好啊。要真的有别家造厨房的就好了。。哎。
 
-# 06 - 刀叉筷勺
+# 08 - 刀叉筷勺
 
 我们要做两个大东西。
 
