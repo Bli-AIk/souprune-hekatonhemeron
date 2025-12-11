@@ -85,9 +85,7 @@ fact rule event 事件系统
 
 ## 叉子
 
-Mesh 文本动画
-
-我们 *fork* 了 bevy_rich_text3d (我的天啊哥们儿这什么滥币双关我不行了)
+Mesh 文本动画倒也没必要单独做一个库，因为 bevy_rich_text3d 本身就能做到。
 
 ## 筷子
 
